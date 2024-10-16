@@ -21,10 +21,37 @@ class RAM:
         return [f"{x:08b}" for x in self.memory[start:end]]  # Display as binary
 
 
+class LogicGates:
+    @staticmethod
+    def AND(a, b):
+        return a & b
+
+    @staticmethod
+    def OR(a, b):
+        return a | b
+
+    @staticmethod
+    def NOT(a):
+        return ~a & 0xFF  # Mask to 8 bits
+
+    @staticmethod
+    def NAND(a, b):
+        return LogicGates.NOT(LogicGates.AND(a, b))
+
+    @staticmethod
+    def NOR(a, b):
+        return LogicGates.NOT(LogicGates.OR(a, b))
+
+    @staticmethod
+    def XOR(a, b):
+        return a ^ b
+
+
 class CPU:
     def __init__(self, ram):
         self.ram = ram
         self.registers = [0] * 8  # 8 registers
+        self.logic_gates = LogicGates()
 
     def execute(self, instruction):
         # Remove comments and strip whitespace
@@ -65,7 +92,7 @@ class CPU:
                 raise ValueError(f"INIT instruction must be in format INIT [address] = [value]: {instruction}")
             _, address, _, value = parts  # Get the address and value
             self.ram.write(int(address[1:-1], 16), int(value.strip(), 2))  # Remove brackets and write binary value
-            print(f"INIT: Set memory{address} to {value.strip()} (binary)")
+            print(f"INIT: Set memory {address} to {value.strip()} (binary)")
 
         elif opcode == "CLEAR":
             if len(parts) != 2:
@@ -77,14 +104,55 @@ class CPU:
         elif opcode == "OUT":
             if len(parts) != 2:
                 raise ValueError(f"OUT instruction must have 2 parts: {instruction}")
-            
             _, reg = parts
-
             reg_index = int(reg[1])
-            print(f"OUT: REG {reg}={self.registers[reg_index]}")
+            print(f"OUT: REG {reg}={self.registers[reg_index]:08b}")  # Print in binary
 
         elif opcode == "HALT":
             return False
+        
+        elif opcode == "AND":
+            if len(parts) != 4:
+                raise ValueError(f"AND instruction must have 4 parts: {instruction}")
+            _, r1, r2, r3 = parts
+            self.registers[int(r3[1])] = self.logic_gates.AND(self.registers[int(r1[1])], self.registers[int(r2[1])])
+            print(f"AND: R{r1[1]} AND R{r2[1]} = R{r3[1]} -> {self.registers[int(r3[1])]:08b}")
+
+        elif opcode == "OR":
+            if len(parts) != 4:
+                raise ValueError(f"OR instruction must have 4 parts: {instruction}")
+            _, r1, r2, r3 = parts
+            self.registers[int(r3[1])] = self.logic_gates.OR(self.registers[int(r1[1])], self.registers[int(r2[1])])
+            print(f"OR: R{r1[1]} OR R{r2[1]} = R{r3[1]} -> {self.registers[int(r3[1])]:08b}")
+
+        elif opcode == "NOT":
+            if len(parts) != 3:
+                raise ValueError(f"NOT instruction must have 3 parts: {instruction}")
+            _, reg, target_reg = parts
+            self.registers[int(target_reg[1])] = self.logic_gates.NOT(self.registers[int(reg[1])])
+            print(f"NOT: R{reg[1]} -> R{target_reg[1]} -> {self.registers[int(target_reg[1])]:08b}")
+
+        elif opcode == "NAND":
+            if len(parts) != 4:
+                raise ValueError(f"NAND instruction must have 4 parts: {instruction}")
+            _, r1, r2, r3 = parts
+            self.registers[int(r3[1])] = self.logic_gates.NAND(self.registers[int(r1[1])], self.registers[int(r2[1])])
+            print(f"NAND: R{r1[1]} NAND R{r2[1]} = R{r3[1]} -> {self.registers[int(r3[1])]:08b}")
+
+        elif opcode == "NOR":
+            if len(parts) != 4:
+                raise ValueError(f"NOR instruction must have 4 parts: {instruction}")
+            _, r1, r2, r3 = parts
+            self.registers[int(r3[1])] = self.logic_gates.NOR(self.registers[int(r1[1])], self.registers[int(r2[1])])
+            print(f"NOR: R{r1[1]} NOR R{r2[1]} = R{r3[1]} -> {self.registers[int(r3[1])]:08b}")
+
+        elif opcode == "XOR":
+            if len(parts) != 4:
+                raise ValueError(f"XOR instruction must have 4 parts: {instruction}")
+            _, r1, r2, r3 = parts
+            self.registers[int(r3[1])] = self.logic_gates.XOR(self.registers[int(r1[1])], self.registers[int(r2[1])])
+            print(f"XOR: R{r1[1]} XOR R{r2[1]} = R{r3[1]} -> {self.registers[int(r3[1])]:08b}")
+
         else:
             raise ValueError(f"Unknown instruction: {instruction}")
 
@@ -97,7 +165,6 @@ class CPU:
                 continue
             if not self.execute(instruction):
                 break
-
 
 class BIOS:
     def __init__(self, cpu):
