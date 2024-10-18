@@ -131,6 +131,13 @@ class CPU:
             if len(parts) != 2:
                 raise ValueError(f"CLEAR instruction must have 2 parts: {instruction}")
             _, address = parts
+
+            if address.startswith("R"):
+                reg = int(address[1])
+                self.registers[reg] = 0
+
+                return
+            
             self.ram.write(
                 int(address[1:-1], 16), 0
             )  # Clear memory at the specified address
