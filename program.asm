@@ -1,4 +1,5 @@
 ; Example program
+VER = 1                    ; Enable debug (VERBOSE) prints of execution
 INIT [0x08] = 0b00000101   ; Initialize memory at address 0x08 with binary 5
 INIT [0x10] = 0b00001010   ; Initialize memory at address 0x10 with binary 10
 INIT [0x1F] = 0b00001010
@@ -14,5 +15,7 @@ OUT R3                     ; Display the register R3
 CLEAR [0x20]               ; Clear the value in memory address 0x20
 CLEAR [0x08]               ; Clear the value in memory address 0x08
 CLEAR [0x10]               ; Clear the value in memory address 0x10
+CLEAR [0x1F]               ; Clear the value in memory address 0x1F
 
+VER = 0                    ; Disable debug (VERBOSE) prints of execution
 HALT                       ; Stop execution
